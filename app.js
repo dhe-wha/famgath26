@@ -29,7 +29,7 @@ const rp = (n) => 'Rp ' + Math.round(n || 0).toLocaleString('id-ID');
 const statusLabel = (s) => STATUS.find((x) => x[0] === s)[1];
 
 // URL Web App Apps Script (Deploy > Web app > URL berakhiran /exec). Kosong = mode lokal tanpa sinkron.
-const API_URL = '';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzo4oeSgF1JdjRvTvBB33m12vilOT8fZ3LP6Fnv0cnjCoqRj2pZzz2rc4HibedYotV5/exec';
 
 let cfg = { ...JSON.parse(localStorage.getItem(CFG_KEY) || '{}'), url: API_URL }; // {url, user, pass, nama}
 let queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
