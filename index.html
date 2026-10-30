@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#b45309">
+<meta name="theme-color" content="#2e7d32">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg">
@@ -12,20 +12,34 @@
 <title>Monitoring Konsumsi</title>
 </head>
 <body>
+<div class="frozen">
 <header>
-  <h1>Konsumsi Family Gathering</h1>
+  <div>
+    <h1>Seksi Konsumsi</h1>
+    <small id="sync"></small>
+  </div>
   <div class="hbtn">
-    <button id="btnExport" title="Ekspor">⬇</button>
-    <button id="btnImport" title="Impor">⬆</button>
-    <input type="file" id="fileImport" accept="application/json" hidden>
+    <button id="btnAdmin" title="Admin" hidden>🛠</button>
+    <button id="btnSync" title="Sinkron">⟳</button>
+    <button id="btnCfg" title="Pengaturan">⚙</button>
   </div>
 </header>
+
+<div class="hero">
+  <img src="banner.jpg" alt="Family Gathering 2026 - Energi Hijau Dari Bumi Panua" width="1200" height="400">
+  <div class="chips">
+    <span class="chip">📅 14 Nov 2026</span>
+    <span class="chip">📍 Lap. Prokalamasi, Popayato</span>
+    <span class="chip hday" id="hday"></span>
+  </div>
+</div>
+</div>
 
 <main>
   <section id="summary"></section>
   <div class="bar">
     <select id="filterStatus"></select>
-    <input id="search" type="search" placeholder="Cari vendor / menu / PIC">
+    <input id="search" type="search" placeholder="Cari vendor / PIC">
   </div>
   <ul id="list"></ul>
 </main>
@@ -36,33 +50,86 @@
 <dialog id="dlgItem">
   <form method="dialog" id="formItem">
     <h2 id="itemTitle">Tambah</h2>
-    <label>Vendor / UMKM <input name="vendor" required></label>
-    <label>Menu <input name="menu" required></label>
+    <label>Vendor <input name="vendor" required></label>
     <div class="row">
-      <label>Jumlah <input name="qty" type="number" min="0" step="1" required></label>
-      <label>Harga satuan <input name="harga" type="number" min="0" step="500" required></label>
-    </div>
-    <div class="row">
-      <label>Dibayar <input name="dibayar" type="number" min="0" step="1000" value="0"></label>
+      <label>Qty pesan <input name="qty" type="number" min="0" step="1" required></label>
       <label>Status <select name="status"></select></label>
     </div>
-    <div class="row">
-      <label>PIC <input name="pic"></label>
-      <label>Kontak <input name="kontak" type="tel"></label>
+    <div class="row nk-hide">
+      <label>Desa <input name="desa"></label>
+      <label>Handphone <input name="kontak" type="tel"></label>
+    </div>
+    <div class="row nk-hide">
+      <label>Biaya (Rp) <input name="biaya" type="number" min="0" step="1000"></label>
+      <label class="lok-txt">Lokasi <input name="lokasiTxt"></label>
     </div>
     <div id="nkOnly">
-      <div class="row">
-        <label>Desa <input name="desa"></label>
-        <label>Lokasi pengantaran <select name="lokasi"></select></label>
-      </div>
+      <label>Lokasi pengantaran <select name="lokasi"></select></label>
       <fieldset id="cek"><legend>Verifikasi saat tiba</legend></fieldset>
     </div>
-    <label>Catatan <textarea name="catatan" rows="2"></textarea></label>
+    <p id="picNote"></p>
     <div class="actions">
       <button type="button" id="btnDelete" class="danger">Hapus</button>
       <span class="grow"></span>
       <button type="button" id="btnCancel">Batal</button>
       <button type="submit" class="primary">Simpan</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgAdmin">
+  <h2>Pengaturan Admin</h2>
+  <div class="seg">
+    <button type="button" data-p="user" class="on">User</button>
+    <button type="button" data-p="lokasi">Lokasi</button>
+  </div>
+
+  <div id="pUser">
+    <ul id="userList"></ul>
+    <form id="formUser" autocomplete="off">
+      <label>User <input name="user" required autocapitalize="none"></label>
+      <label>Nama <input name="nama" required></label>
+      <label>Password <input name="pass" required></label>
+      <label>Role
+        <select name="role">
+          <option>User</option>
+          <option>Admin</option>
+        </select>
+      </label>
+      <div class="actions">
+        <button type="button" id="btnUserDel" class="danger">Hapus</button>
+        <span class="grow"></span>
+        <button type="button" id="btnUserNew">Baru</button>
+        <button type="submit" class="primary">Simpan</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="pLokasi" hidden>
+    <form id="formLokasi">
+      <label>Lokasi penempatan nasi kotak (satu per baris) <textarea name="list" rows="10"></textarea></label>
+      <div class="actions">
+        <span class="grow"></span>
+        <button type="submit" class="primary">Simpan</button>
+      </div>
+    </form>
+  </div>
+
+  <p id="adminMsg"></p>
+  <div class="actions"><span class="grow"></span><button type="button" id="btnAdminClose">Tutup</button></div>
+</dialog>
+
+<dialog id="dlgCfg">
+  <form method="dialog" id="formCfg">
+    <h2 id="cfgTitle">Masuk</h2>
+    <label>User <input name="user" autocomplete="username" autocapitalize="none"></label>
+    <label>Password <input name="pass" type="password" autocomplete="current-password"></label>
+    <p id="cfgMsg"></p>
+    <div class="actions">
+      <button type="button" id="btnLogout" class="danger">Keluar</button>
+      <span class="grow"></span>
+      <button type="button" id="btnCfgCancel">Batal</button>
+      <button type="submit" class="primary">Masuk</button>
     </div>
   </form>
 </dialog>
