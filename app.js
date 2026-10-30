@@ -80,7 +80,7 @@ function stats(kat) {
     dipesan: its.filter((i) => i.status !== 'belum').reduce((a, i) => a + i.qty, 0),
     diterima: its.filter((i) => i.status === 'diterima').reduce((a, i) => a + i.qty, 0),
     biaya: its.reduce((a, i) => a + (i.biaya || 0), 0),
-    verif: its.filter(terverifikasi).length,
+    nDiterima: its.filter((i) => i.status === 'diterima').length,
     ...t,
   };
 }
@@ -105,7 +105,7 @@ function renderSummary() {
     <div class="sumhead"><b>${tab}</b><button id="btnTarget">Atur target</button></div>
     <div class="grid">
       <div class="stat"><small>Jumlah dipesan / target</small><b>${s.dipesan} / ${s.target}</b></div>
-      <div class="stat"><small>${tab === NASI ? 'Vendor terverifikasi' : 'Vendor'}</small><b>${tab === NASI ? s.verif + ' / ' + s.n : s.n}</b></div>
+      <div class="stat"><small>Vendor diterima</small><b>${s.nDiterima} / ${s.n}</b></div>
       <div class="stat"><small>Total biaya</small><b>${rp(s.biaya)}</b></div>
       <div class="stat"><small>Sisa anggaran (${rp(s.anggaran)})</small><b class="${sisa < 0 ? 'over' : ''}">${rp(sisa)}</b></div>
     </div>
