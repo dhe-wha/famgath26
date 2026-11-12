@@ -147,6 +147,11 @@ main { max-width: 720px; margin: 0 auto; padding: 12px; }
   box-shadow: 0 4px 12px #0005;
 }
 #update button { border: 0; border-radius: 8px; padding: 6px 12px; background: var(--acc); color: #3b2f00; font: inherit; font-weight: 600; }
+.s-bad { background: var(--bad); }
+#pesSum { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px #0002; border-top: 4px solid var(--acc); }
+#pesMsg { min-height: 1.2em; margin: 8px 0 0; font-size: 13px; color: var(--bad); }
+#pesList li { cursor: pointer; }
+#pesSaran li { font-size: 14px; }
 .sec { margin: 4px 4px 8px; font-size: 15px; }
 .pager { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 12px; }
 .pager button { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 6px 12px; font: inherit; }

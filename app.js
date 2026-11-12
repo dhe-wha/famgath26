@@ -38,7 +38,8 @@ let busy = false;
 
 let state = load();
 const UPDATE = 'Update';
-const TABS = [[NASI, '🍱'], [UPDATE, '📊']];
+const PESERTA = 'Peserta';
+const TABS = [[NASI, '🍱'], [UPDATE, '📊'], [PESERTA, '👥']];
 const PER = 10;
 let tab = NASI;
 let page = 1;
@@ -181,16 +182,81 @@ function renderList() {
   $('pager').innerHTML = `<button data-p="-1" ${page <= 1 ? 'disabled' : ''}>‹ Prev</button><span>${from}–${Math.min(page * PER, all.length)} dari ${all.length}<br>Hal ${page} / ${pages}</span><button data-p="1" ${page >= pages ? 'disabled' : ''}>Next ›</button>`;
 }
 
+// ---- peserta: jumlah orang per lokasi duduk vs nasi kotak di lokasi yang sama ----
+// Kekurangan di satu lokasi diambil dari kelebihan di lokasi terdekat. Kedekatan = jarak urutan
+// di daftar lokasi (atur urutannya di panel admin > Lokasi).
+function renderPeserta() {
+  const pes = state.peserta || [];
+  const nasi = state.items.filter((i) => i.kategori === NASI);
+  const lok = [...new Set([...(state.lokasi || LOKASI), ...pes.map((p) => p.lokasi), ...nasi.map((i) => i.lokasi)].filter(Boolean))];
+  const sum = (a, f) => a.reduce((n, x) => n + f(x), 0);
+  const totPes = sum(pes, (p) => p.jumlah);
+  const totNasi = sum(nasi, (i) => i.qty);
+  const sel = (n) => (n > 0 ? '+' : '') + n;
+  $('pesSum').innerHTML = `<div class="grid">
+      <div class="stat"><small>Total peserta</small><b>${totPes}</b></div>
+      <div class="stat"><small>Total nasi kotak</small><b>${totNasi}</b></div>
+      <div class="stat"><small>Selisih (nasi − peserta)</small><b class="${totNasi < totPes ? 'over' : ''}">${sel(totNasi - totPes)}</b></div>
+      <div class="stat"><small>Departemen</small><b>${pes.length}</b></div></div>`;
+
+  const diff = {};
+  $('pesLok').innerHTML = lok
+    .map((l) => {
+      const p = sum(pes.filter((x) => x.lokasi === l), (x) => x.jumlah);
+      const n = sum(nasi.filter((i) => i.lokasi === l), (i) => i.qty);
+      diff[l] = n - p;
+      const cls = diff[l] < 0 ? 's-bad' : diff[l] > 0 ? 's-dipesan' : 's-diterima';
+      return `<li><div class="top"><span class="vendor">${esc(l)}</span><span class="badge ${cls}">${sel(diff[l])}</span></div>
+        <div class="meta">Peserta ${p} · Nasi kotak ${n}</div></li>`;
+    })
+    .join('');
+  const tanpaLokP = sum(pes.filter((p) => !p.lokasi), (p) => p.jumlah);
+  const tanpaLokN = sum(nasi.filter((i) => !i.lokasi), (i) => i.qty);
+  if (tanpaLokP || tanpaLokN)
+    $('pesLok').insertAdjacentHTML('beforeend', `<li><div class="top"><span class="vendor">Belum ada lokasi</span></div><div class="meta">Peserta ${tanpaLokP} · Nasi kotak ${tanpaLokN}</div></li>`);
+
+  // greedy: kekurangan diisi dari lokasi berlebih yang paling dekat
+  const sisa = { ...diff };
+  const saran = [];
+  lok.forEach((d, di) => {
+    if (sisa[d] >= 0) return;
+    lok
+      .map((s, si) => ({ s, jarak: Math.abs(si - di) }))
+      .filter((x) => sisa[x.s] > 0)
+      .sort((a, b) => a.jarak - b.jarak)
+      .forEach(({ s }) => {
+        const ambil = Math.min(-sisa[d], sisa[s]);
+        if (ambil <= 0) return;
+        saran.push(`<li><b>${esc(d)}</b> kurang → ambil <b>${ambil}</b> dari <b>${esc(s)}</b></li>`);
+        sisa[d] += ambil;
+        sisa[s] -= ambil;
+      });
+    if (sisa[d] < 0) saran.push(`<li><b>${esc(d)}</b> masih kurang <b>${-sisa[d]}</b>, tidak ada lokasi berlebih</li>`);
+  });
+  $('pesSaran').innerHTML = saran.length ? saran.join('') : '<li class="empty">Semua lokasi seimbang atau belum ada data</li>';
+
+  $('btnPesAdd').hidden = !cfg.admin;
+  $('pesList').innerHTML = pes.length
+    ? pes
+        .map(
+          (p) => `<li data-id="${esc(p.id)}"><div class="top"><span class="vendor">${esc(p.dept)}</span><span class="badge s-belum">${p.jumlah} orang</span></div>
+        <div class="meta">${p.lokasi ? 'Lokasi ' + esc(p.lokasi) : 'Belum ada lokasi'}</div></li>`
+        )
+        .join('')
+    : '<li class="empty">Belum ada data peserta</li>';
+}
+
 function render() {
-  const upd = tab === UPDATE;
-  $('viewList').hidden = upd;
-  $('viewUpdate').hidden = !upd;
-  $('fab').hidden = upd;
+  $('viewList').hidden = tab !== NASI;
+  $('viewUpdate').hidden = tab !== UPDATE;
+  $('viewPeserta').hidden = tab !== PESERTA;
+  $('fab').hidden = tab !== NASI;
   renderTabs();
-  if (upd) {
+  if (tab === UPDATE) {
     renderSummary();
     renderLokasi();
-  } else renderList();
+  } else if (tab === PESERTA) renderPeserta();
+  else renderList();
 }
 
 function openItem(id) {
@@ -349,8 +415,8 @@ async function sync(pull = true) {
       saveQueue();
     }
     if (pull) {
-      const { items, target, lokasi, nama, admin } = await api({ action: 'read' });
-      state = { items, target: { ...state.target, ...target }, lokasi: lokasi.length ? lokasi : LOKASI };
+      const { items, target, lokasi, nama, admin, peserta } = await api({ action: 'read' });
+      state = { items, target: { ...state.target, ...target }, lokasi: lokasi.length ? lokasi : LOKASI, peserta: peserta || [] };
       cfg.nama = nama;
       cfg.admin = !!admin;
       $('btnAdmin').hidden = !cfg.admin;
@@ -435,6 +501,49 @@ $('hday').textContent = hari > 0 ? 'H-' + hari : hari === 0 ? 'Hari ini!' : 'Sel
 
 if (!cfg.url) $('btnSync').hidden = $('btnCfg').hidden = true;
 $('btnAdmin').hidden = !cfg.admin;
+
+// ---- peserta (admin: tambah / ubah / hapus langsung ke Sheet) ----
+let editPes = null;
+function openPeserta(id) {
+  editPes = id || null;
+  const p = (state.peserta || []).find((x) => x.id === id);
+  const f = $('formPeserta');
+  f.reset();
+  $('pesTitle').textContent = p ? 'Ubah departemen' : 'Tambah departemen';
+  $('pesMsg').textContent = '';
+  f.elements.lokasi.innerHTML = '<option value="">-</option>' + (state.lokasi || LOKASI).map((l) => `<option>${esc(l)}</option>`).join('');
+  $('btnPesDel').style.display = p ? '' : 'none';
+  if (p) {
+    f.elements.dept.value = p.dept;
+    f.elements.jumlah.value = p.jumlah;
+    f.elements.lokasi.value = p.lokasi;
+  }
+  $('dlgPeserta').showModal();
+}
+async function pesCall(body) {
+  $('pesMsg').textContent = 'Memproses…';
+  try {
+    await api(body);
+    $('dlgPeserta').close();
+    await sync();
+  } catch (e) {
+    $('pesMsg').textContent = e.message;
+  }
+}
+$('btnPesAdd').onclick = () => openPeserta();
+$('pesList').onclick = (e) => {
+  const li = e.target.closest('li[data-id]');
+  if (li && cfg.admin) openPeserta(li.dataset.id);
+};
+$('btnPesCancel').onclick = () => $('dlgPeserta').close();
+$('btnPesDel').onclick = () => {
+  if (editPes && confirm('Hapus departemen ini?')) pesCall({ action: 'pesertaDelete', id: editPes });
+};
+$('formPeserta').onsubmit = (e) => {
+  e.preventDefault();
+  const f = $('formPeserta').elements;
+  pesCall({ action: 'pesertaSave', id: editPes, dept: f.dept.value.trim(), jumlah: +f.jumlah.value, lokasi: f.lokasi.value });
+};
 
 // ---- panel admin: kelola user, password, dan daftar lokasi ----
 let users = [];

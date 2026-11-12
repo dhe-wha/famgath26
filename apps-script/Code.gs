@@ -1,7 +1,7 @@
 // Backend PWA Konsumsi. Tempel di Apps Script yang terikat ke sheet Famgat_2026.
 // Login memakai sheet Ketentuan: kolom C = User, D = Nama, E = Password, F = Role (Admin / User).
 // Hanya Role Admin yang boleh hapus vendor dan kelola user/lokasi.
-const ADMIN_ACTIONS = ['delete', 'users', 'userSave', 'userDelete', 'lokasiSet'];
+const ADMIN_ACTIONS = ['delete', 'users', 'userSave', 'userDelete', 'lokasiSet', 'pesertaSave', 'pesertaDelete'];
 
 const KAT = ['Nasi Kotak', 'Makanan', 'Minuman', 'Jajanan'];
 const STATUS = { belum: 'Belum pesan', dipesan: 'Dipesan', diterima: 'Diterima' };
@@ -53,6 +53,8 @@ function doPost(e) {
     else if (req.action === 'userSave') saveUser_(req);
     else if (req.action === 'userDelete') deleteUser_(req.user);
     else if (req.action === 'lokasiSet') setLokasi_(req.list);
+    else if (req.action === 'pesertaSave') savePeserta_(req);
+    else if (req.action === 'pesertaDelete') deletePeserta_(req.id);
     return out_({ ok: true });
   } catch (err) {
     return out_({ ok: false, error: String(err) });
@@ -197,7 +199,40 @@ function readAll_() {
   const ket = SpreadsheetApp.getActive().getSheetByName('Ketentuan');
   const lokasi = ket.getRange(2, 1, Math.max(ket.getLastRow() - 1, 1), 1).getValues().map((r) => r[0]).filter(String);
 
-  return { items, target, lokasi };
+  return { items, target, lokasi, peserta: listPeserta_() };
+}
+
+// Peserta per departemen ada di Ketentuan kolom H:J (Departemen, Jumlah, Lokasi tempat duduk).
+// id = nomor baris; menghapus hanya mengosongkan sel karena baris dibagi dengan tabel lain.
+function pesertaRows_() {
+  const sh = ketSheet_();
+  const n = Math.max(sh.getLastRow() - 1, 1);
+  return { sh, n, rows: sh.getRange(2, 8, n, 3).getValues() };
+}
+
+function listPeserta_() {
+  return pesertaRows_()
+    .rows.map((r, i) => ({ id: String(i + 2), dept: String(r[0]).trim(), jumlah: Number(r[1]) || 0, lokasi: String(r[2] || '').trim() }))
+    .filter((p) => p.dept);
+}
+
+function savePeserta_(p) {
+  const dept = String(p.dept || '').trim();
+  const jumlah = Number(p.jumlah);
+  if (!dept) throw new Error('Nama departemen wajib diisi');
+  if (isNaN(jumlah) || jumlah < 0) throw new Error('Jumlah tidak valid');
+  const { sh, n, rows } = pesertaRows_();
+  let row = Number(p.id);
+  if (!row || row < 2) {
+    const empty = rows.findIndex((r) => !String(r[0]).trim());
+    row = empty > -1 ? empty + 2 : n + 2;
+  }
+  sh.getRange(row, 8, 1, 3).setValues([[dept, jumlah, String(p.lokasi || '').trim()]]);
+}
+
+function deletePeserta_(id) {
+  const row = Number(id);
+  if (row >= 2) ketSheet_().getRange(row, 8, 1, 3).clearContent();
 }
 
 // "No" (kolom A) dipakai sebagai id baris.

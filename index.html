@@ -49,6 +49,15 @@
     <h3 class="sec">Diterima per lokasi</h3>
     <ul id="lokList"></ul>
   </div>
+  <div id="viewPeserta" hidden>
+    <section id="pesSum"></section>
+    <h3 class="sec">Peserta vs nasi kotak per lokasi</h3>
+    <ul id="pesLok"></ul>
+    <h3 class="sec">Saran penyeimbangan</h3>
+    <ul id="pesSaran"></ul>
+    <div class="sumhead" style="margin:14px 4px 8px"><h3 class="sec" style="margin:0">Departemen</h3><button id="btnPesAdd" hidden>+ Tambah</button></div>
+    <ul id="pesList"></ul>
+  </div>
 </main>
 
 <div id="update" hidden>
@@ -142,6 +151,24 @@
       <span class="grow"></span>
       <button type="button" id="btnCfgCancel">Batal</button>
       <button type="submit" class="primary">Masuk</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgPeserta">
+  <form method="dialog" id="formPeserta">
+    <h2 id="pesTitle">Departemen</h2>
+    <label>Departemen <input name="dept" required></label>
+    <div class="row">
+      <label>Jumlah peserta <input name="jumlah" type="number" min="0" step="1" required></label>
+      <label>Lokasi duduk <select name="lokasi"></select></label>
+    </div>
+    <p id="pesMsg"></p>
+    <div class="actions">
+      <button type="button" id="btnPesDel" class="danger">Hapus</button>
+      <span class="grow"></span>
+      <button type="button" id="btnPesCancel">Batal</button>
+      <button type="submit" class="primary">Simpan</button>
     </div>
   </form>
 </dialog>
