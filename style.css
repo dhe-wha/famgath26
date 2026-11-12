@@ -125,6 +125,11 @@ main { max-width: 720px; margin: 0 auto; padding: 12px; }
 .fill.pay { background: var(--pri); }
 .over { color: var(--bad); }
 
+.sec { margin: 4px 4px 8px; font-size: 15px; }
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 12px; }
+.pager button { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 6px 12px; font: inherit; }
+.pager button:disabled { opacity: .4; }
+.pager span { flex: 1; text-align: center; font-size: 13px; color: var(--mut); }
 .bar { display: flex; gap: 8px; margin-bottom: 10px; }
 .bar select, .bar input { padding: 8px; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: var(--card); }
 .bar input { flex: 1; min-width: 0; }

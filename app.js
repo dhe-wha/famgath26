@@ -37,7 +37,11 @@ let syncMsg = '';
 let busy = false;
 
 let state = load();
-let tab = KATEGORI[0];
+const UPDATE = 'Update';
+const TABS = [[NASI, '🍱'], [UPDATE, '📊']];
+const PER = 10;
+let tab = NASI;
+let page = 1;
 let editId = null;
 
 function load() {
@@ -92,17 +96,17 @@ function esc(s) {
 }
 
 function renderTabs() {
-  $('tabs').innerHTML = KATEGORI.map(
-    (k, n) =>
-      `<button class="${k === tab ? 'on' : ''}" data-k="${k}"><span class="ic">${ICON[n]}</span><span>${k}</span></button>`
+  $('tabs').innerHTML = TABS.map(
+    ([k, ic]) =>
+      `<button class="${k === tab ? 'on' : ''}" data-k="${k}"><span class="ic">${ic}</span><span>${k}</span></button>`
   ).join('');
 }
 
 function renderSummary() {
-  const s = stats(tab);
+  const s = stats(NASI);
   const sisa = s.anggaran - s.biaya;
   $('summary').innerHTML = `
-    <div class="sumhead"><b>${tab}</b><button id="btnTarget">Atur target</button></div>
+    <div class="sumhead"><b>${NASI}</b><button id="btnTarget">Atur target</button></div>
     <div class="grid">
       <div class="stat"><small>Jumlah dipesan / target</small><b>${s.dipesan} / ${s.target}</b></div>
       <div class="stat"><small>Vendor diterima</small><b>${s.nDiterima} / ${s.n}</b></div>
@@ -116,15 +120,33 @@ function renderSummary() {
   $('btnTarget').onclick = openTarget;
 }
 
+// ringkasan diterima per titik lokasi (hanya Nasi Kotak)
+function renderLokasi() {
+  const its = state.items.filter((i) => i.kategori === NASI && i.status === 'diterima');
+  const dipakai = state.items.map((i) => i.lokasi).filter(Boolean);
+  const lok = [...new Set([...(state.lokasi || LOKASI), ...dipakai])];
+  $('lokList').innerHTML = lok
+    .map((l) => {
+      const a = its.filter((i) => i.lokasi === l);
+      const qty = a.reduce((n, i) => n + i.qty, 0);
+      return `<li><div class="top"><span class="vendor">${esc(l)}</span><span class="badge ${a.length ? 's-diterima' : 's-belum'}">${a.length} vendor</span></div>
+        <div class="meta">${qty} porsi diterima</div></li>`;
+    })
+    .join('');
+}
+
 function renderList() {
   const f = $('filterStatus').value;
   const q = $('search').value.trim().toLowerCase();
-  const its = state.items.filter(
+  const all = state.items.filter(
     (i) =>
-      i.kategori === tab &&
+      i.kategori === NASI &&
       (!f || i.status === f) &&
       (!q || [i.vendor, i.pic].join(' ').toLowerCase().includes(q))
   );
+  const pages = Math.max(1, Math.ceil(all.length / PER));
+  page = Math.min(page, pages);
+  const its = all.slice((page - 1) * PER, page * PER);
   $('list').innerHTML = its.length
     ? its
         .map((i) => {
@@ -143,12 +165,20 @@ function renderList() {
         })
         .join('')
     : '<li class="empty">Belum ada data</li>';
+  const from = all.length ? (page - 1) * PER + 1 : 0;
+  $('pager').innerHTML = `<button data-p="-1" ${page <= 1 ? 'disabled' : ''}>‹ Prev</button><span>${from}–${Math.min(page * PER, all.length)} dari ${all.length}<br>Hal ${page} / ${pages}</span><button data-p="1" ${page >= pages ? 'disabled' : ''}>Next ›</button>`;
 }
 
 function render() {
+  const upd = tab === UPDATE;
+  $('viewList').hidden = upd;
+  $('viewUpdate').hidden = !upd;
+  $('fab').hidden = upd;
   renderTabs();
-  renderSummary();
-  renderList();
+  if (upd) {
+    renderSummary();
+    renderLokasi();
+  } else renderList();
 }
 
 function openItem(id) {
@@ -185,8 +215,8 @@ function openItem(id) {
 }
 
 function openTarget() {
-  const t = state.target[tab] || { target: 0, anggaran: 0 };
-  $('targetTitle').textContent = 'Target ' + tab;
+  const t = state.target[NASI] || { target: 0, anggaran: 0 };
+  $('targetTitle').textContent = 'Target ' + NASI;
   $('formTarget').elements.target.value = t.target;
   $('formTarget').elements.anggaran.value = t.anggaran;
   $('dlgTarget').showModal();
@@ -201,8 +231,12 @@ $('list').onclick = (e) => {
   if (li) openItem(li.dataset.id);
 };
 $('fab').onclick = () => openItem();
-$('search').oninput = renderList;
-$('filterStatus').onchange = renderList;
+$('search').oninput = () => { page = 1; renderList(); };
+$('filterStatus').onchange = () => { page = 1; renderList(); };
+$('pager').onclick = (e) => {
+  const d = +e.target.closest('button[data-p]')?.dataset.p;
+  if (d) { page += d; renderList(); window.scrollTo(0, 0); }
+};
 $('btnCancel').onclick = () => $('dlgItem').close();
 $('btnTargetCancel').onclick = () => $('dlgTarget').close();
 
@@ -241,9 +275,9 @@ $('btnDelete').onclick = () => {
 
 $('formTarget').onsubmit = () => {
   const f = $('formTarget').elements;
-  state.target[tab] = { target: +f.target.value, anggaran: +f.anggaran.value };
+  state.target[NASI] = { target: +f.target.value, anggaran: +f.anggaran.value };
   save();
-  enqueue({ action: 'target', kategori: tab, ...state.target[tab] });
+  enqueue({ action: 'target', kategori: NASI, ...state.target[NASI] });
 };
 
 // ---- sinkron Google Sheet (lewat Apps Script web app) ----
