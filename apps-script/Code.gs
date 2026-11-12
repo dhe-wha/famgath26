@@ -12,6 +12,23 @@ const CEK = ['lauk', 'buah', 'sambal', 'sayur', 'minum', 'sendok'];
 const WIDTH = { 'Nasi Kotak': 17 };
 const widthOf_ = (kat) => WIDTH[kat] || 9;
 
+// Trigger sederhana: edit manual di sheet Nasi Kotak mengisi kolom Q (Last_update) di baris yang berubah.
+// Tulisan dari aplikasi (setValues di upsert_) tidak memicu trigger ini, jadi tidak ada putaran ganda.
+function onEdit(e) {
+  const rg = e.range;
+  const sh = rg.getSheet();
+  if (sh.getName() !== KAT[0]) return;
+  const first = Math.max(rg.getRow(), 2);
+  const n = rg.getLastRow() - first + 1;
+  if (n < 1) return;
+  if (rg.getColumn() === 17 && rg.getLastColumn() === 17) return; // hanya kolom Last_update yang diubah
+  const q = sh.getRange(first, 17, n, 1);
+  const old = q.getValues();
+  const vendor = sh.getRange(first, 2, n, 1).getValues();
+  const now = new Date();
+  q.setValues(old.map((v, i) => [vendor[i][0] ? now : v[0]])).setNumberFormat('dd/MM/yyyy HH:mm:ss');
+}
+
 function doGet() {
   return out_({ ok: true, msg: 'konsumsi api' });
 }
