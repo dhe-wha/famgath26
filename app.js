@@ -115,7 +115,7 @@ function renderSummary() {
   $('summary').innerHTML = `
     <div class="sumhead"><b>${NASI}</b><button id="btnTarget">Atur target</button></div>
     <div class="grid">
-      <div class="stat"><small>Jumlah dipesan / target</small><b>${s.dipesan} / ${s.target}</b></div>
+      <div class="stat"><small>Jumlah diterima / dipesan</small><b>${s.diterima} / ${s.dipesan}</b></div>
       <div class="stat"><small>Vendor diterima</small><b>${s.nDiterima} / ${s.n}</b></div>
       ${
         showBiaya()
