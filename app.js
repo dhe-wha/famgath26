@@ -115,7 +115,7 @@ function renderSummary() {
   const s = stats(NASI);
   const sisa = s.anggaran - s.biaya;
   $('summary').innerHTML = `
-    <div class="sumhead"><b>${NASI}</b><button id="btnTarget">Atur target</button></div>
+    <div class="sumhead"><b>${NASI}</b>${showBiaya() ? '<button id="btnTarget">Atur target</button>' : ''}</div>
     <div class="grid">
       <div class="stat"><small>Jumlah diterima / dipesan</small><b>${s.diterima} / ${s.dipesan}</b></div>
       <div class="stat"><small>Vendor diterima</small><b>${s.nDiterima} / ${s.n}</b></div>
@@ -131,7 +131,7 @@ function renderSummary() {
     <div class="prog"><label><span>Diterima</span><span>${s.diterima} / ${s.qty}</span></label>
       <div class="track"><div class="fill" style="width:${pct(s.diterima, s.qty)}%"></div></div></div>
     <div class="meta upd">Terakhir diperbarui: ${fmtTs(Math.max(0, ...state.items.map((i) => i.updated || 0))) || '-'}</div>`;
-  $('btnTarget').onclick = openTarget;
+  if ($('btnTarget')) $('btnTarget').onclick = openTarget;
 }
 
 // ringkasan diterima per titik lokasi (hanya Nasi Kotak)
