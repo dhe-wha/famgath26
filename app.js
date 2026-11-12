@@ -93,6 +93,9 @@ function stats(kat) {
 const fmtTs = (ms) =>
   ms ? new Date(ms).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 
+// biaya dan anggaran hanya untuk admin (mode lokal tanpa Sheet bebas)
+const showBiaya = () => !cfg.url || cfg.admin;
+
 const pct = (a, b) => (b > 0 ? Math.min(100, (a / b) * 100) : 0);
 
 function esc(s) {
@@ -114,8 +117,12 @@ function renderSummary() {
     <div class="grid">
       <div class="stat"><small>Jumlah dipesan / target</small><b>${s.dipesan} / ${s.target}</b></div>
       <div class="stat"><small>Vendor diterima</small><b>${s.nDiterima} / ${s.n}</b></div>
-      <div class="stat"><small>Total biaya</small><b>${rp(s.biaya)}</b></div>
-      <div class="stat"><small>Sisa anggaran (${rp(s.anggaran)})</small><b class="${sisa < 0 ? 'over' : ''}">${rp(sisa)}</b></div>
+      ${
+        showBiaya()
+          ? `<div class="stat"><small>Total biaya</small><b>${rp(s.biaya)}</b></div>
+      <div class="stat"><small>Sisa anggaran (${rp(s.anggaran)})</small><b class="${sisa < 0 ? 'over' : ''}">${rp(sisa)}</b></div>`
+          : ''
+      }
     </div>
     <div class="prog"><label><span>Dipesan</span><span>${pct(s.dipesan, s.target).toFixed(0)}%</span></label>
       <div class="track"><div class="fill" style="width:${pct(s.dipesan, s.target)}%"></div></div></div>
@@ -164,7 +171,7 @@ function renderList() {
           return `<li data-id="${i.id}">
         <div class="top"><span class="vendor">${esc(i.vendor)}</span>
           <span class="badge s-${i.status}">${statusLabel(i.status)}</span></div>
-        <div class="meta line"><span>${i.qty} porsi${i.biaya ? ' · ' + rp(i.biaya) : ''}</span><span class="pic">${esc(i.pic)}</span></div>
+        <div class="meta line"><span>${i.qty} porsi${i.biaya && showBiaya() ? ' · ' + rp(i.biaya) : ''}</span><span class="pic">${esc(i.pic)}</span></div>
         ${lokasi}
       </li>`;
         })
