@@ -1,7 +1,7 @@
 // Backend PWA Konsumsi. Tempel di Apps Script yang terikat ke sheet Famgat_2026.
 // Login memakai sheet Ketentuan: kolom C = User, D = Nama, E = Password, F = Role (Admin / User).
 // Hanya Role Admin yang boleh hapus vendor dan kelola user/lokasi.
-const ADMIN_ACTIONS = ['delete', 'users', 'userSave', 'userDelete', 'lokasiSet', 'pesertaSave', 'pesertaDelete'];
+const ADMIN_ACTIONS = ['delete', 'users', 'userSave', 'userDelete', 'lokasiSet', 'pesertaSave', 'pesertaDelete', 'target'];
 
 const KAT = ['Nasi Kotak', 'Makanan', 'Minuman', 'Jajanan'];
 const STATUS = { belum: 'Belum pesan', dipesan: 'Dipesan', diterima: 'Diterima' };
@@ -42,13 +42,10 @@ function doPost(e) {
     if (a.error) return out_({ ok: false, error: a.error });
     if (req.action === 'read') return out_({ ok: true, nama: a.nama, admin: a.admin, ...readAll_() });
     if (req.action === 'upsert') return out_({ ok: true, id: upsert_(req.item, a.nama) });
-    if (req.action === 'target') {
-      setTarget_(req.kategori, req.target, req.anggaran);
-      return out_({ ok: true });
-    }
     if (!ADMIN_ACTIONS.includes(req.action)) return out_({ ok: false, error: 'aksi tidak dikenal' });
     if (!a.admin) return out_({ ok: false, error: 'Hanya admin yang boleh' });
     if (req.action === 'delete') remove_(req.kategori, req.id);
+    else if (req.action === 'target') setTarget_(req.kategori, req.target, req.anggaran);
     else if (req.action === 'users') return out_({ ok: true, users: listUsers_() });
     else if (req.action === 'userSave') saveUser_(req);
     else if (req.action === 'userDelete') deleteUser_(req.user);
