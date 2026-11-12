@@ -1,8 +1,8 @@
-const CACHE = 'konsumsi-fg-v19';
+const CACHE = 'konsumsi-fg-v20';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'banner.jpg'];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: 'reload' })))));
   self.skipWaiting();
 });
 
@@ -17,7 +17,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: 'no-cache' }) // lewati cache HTTP 10 menit milik GitHub Pages
       .then((r) => {
         const copy = r.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));

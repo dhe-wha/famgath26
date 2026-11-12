@@ -545,4 +545,16 @@ addEventListener('scroll', () => {
   else if (scrollY < 10) f.classList.remove('shrunk');
 }, { passive: true });
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+// Service worker baru yang mengambil alih memunculkan tombol muat ulang (halaman masih memakai kode lama).
+if ('serviceWorker' in navigator) {
+  const sudahAktif = !!navigator.serviceWorker.controller; // false = instal pertama, tidak perlu pesan
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (sudahAktif) $('update').hidden = false;
+  });
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    const cek = () => reg.update().catch(() => {});
+    setInterval(cek, 60000);
+    document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && cek());
+  });
+}
+$('btnReload').onclick = () => location.reload();
