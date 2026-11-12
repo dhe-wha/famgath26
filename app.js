@@ -89,6 +89,10 @@ function stats(kat) {
   };
 }
 
+// waktu terakhir diubah, mis. "12 Nov 16.42"
+const fmtTs = (ms) =>
+  ms ? new Date(ms).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+
 const pct = (a, b) => (b > 0 ? Math.min(100, (a / b) * 100) : 0);
 
 function esc(s) {
@@ -116,7 +120,8 @@ function renderSummary() {
     <div class="prog"><label><span>Dipesan</span><span>${pct(s.dipesan, s.target).toFixed(0)}%</span></label>
       <div class="track"><div class="fill" style="width:${pct(s.dipesan, s.target)}%"></div></div></div>
     <div class="prog"><label><span>Diterima</span><span>${s.diterima} / ${s.qty}</span></label>
-      <div class="track"><div class="fill" style="width:${pct(s.diterima, s.qty)}%"></div></div></div>`;
+      <div class="track"><div class="fill" style="width:${pct(s.diterima, s.qty)}%"></div></div></div>
+    <div class="meta upd">Terakhir diperbarui: ${fmtTs(Math.max(0, ...state.items.map((i) => i.updated || 0))) || '-'}</div>`;
   $('btnTarget').onclick = openTarget;
 }
 
@@ -152,7 +157,7 @@ function renderList() {
         .map((i) => {
           const lokasi =
             tab === NASI
-              ? `<div class="meta">Lokasi ${esc(i.lokasi) || '-'} · <span class="${terverifikasi(i) ? 'vok' : ''}">Cek ${cekDone(i)}/${CEK.length}</span></div>`
+              ? `<div class="meta line"><span>Lokasi ${esc(i.lokasi) || '-'} · <span class="${terverifikasi(i) ? 'vok' : ''}">Cek ${cekDone(i)}/${CEK.length}</span></span><span class="upd">${i.updated ? 'Update ' + fmtTs(i.updated) : ''}</span></div>`
               : i.lokasi
               ? `<div class="meta">Lokasi ${esc(i.lokasi)}</div>`
               : '';
@@ -261,6 +266,7 @@ $('formItem').onsubmit = () => {
     state.items.push(item);
   }
   item.pic = cfg.nama || item.pic || '';
+  if (tab === NASI) item.updated = Date.now();
   save();
   enqueue({ action: 'upsert', item: { ...item } });
 };

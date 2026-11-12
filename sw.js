@@ -1,4 +1,4 @@
-const CACHE = 'konsumsi-fg-v16';
+const CACHE = 'konsumsi-fg-v17';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'banner.jpg'];
 
 self.addEventListener('install', (e) => {

@@ -8,8 +8,8 @@ const STATUS = { belum: 'Belum pesan', dipesan: 'Dipesan', diterima: 'Diterima' 
 const CEK = ['lauk', 'buah', 'sambal', 'sayur', 'minum', 'sendok'];
 
 // Kolom (0-based): 0 No, 1 Vendor, 2 Desa, 3 Handphone, 4 Qty_pesan, 5 Biaya, 6 Status, 7 Lokasi, 8 PIC,
-// khusus Nasi Kotak: 9-14 Lauk..Sendok, 15 Check
-const WIDTH = { 'Nasi Kotak': 16 };
+// khusus Nasi Kotak: 9-14 Lauk..Sendok, 15 Check, 16 Last_update (waktu terakhir diubah lewat aplikasi)
+const WIDTH = { 'Nasi Kotak': 17 };
 const widthOf_ = (kat) => WIDTH[kat] || 9;
 
 function doGet() {
@@ -155,7 +155,10 @@ function rowToItem_(kat, r) {
     pic: r[8] || '',
     cek: {},
   };
-  if (kat === KAT[0]) CEK.forEach((k, i) => (it.cek[k] = r[9 + i] === true));
+  if (kat === KAT[0]) {
+    CEK.forEach((k, i) => (it.cek[k] = r[9 + i] === true));
+    it.updated = r[16] instanceof Date ? r[16].getTime() : 0;
+  }
   return it;
 }
 
@@ -212,6 +215,8 @@ function upsert_(it, nama) {
   if (it.kategori === KAT[0]) {
     CEK.forEach((k, i) => (r[9 + i] = !!(it.cek && it.cek[k])));
     r[15] = CEK.every((k) => it.cek && it.cek[k]);
+    r[16] = new Date();
+    sh.getRange(row, 17).setNumberFormat('dd/MM/yyyy HH:mm:ss');
   }
   sh.getRange(row, 1, 1, w).setValues([r]);
   return String(r[0]);
