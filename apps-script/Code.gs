@@ -40,8 +40,8 @@ function doPost(e) {
     const req = JSON.parse(e.postData.contents);
     const a = auth_(req);
     if (a.error) return out_({ ok: false, error: a.error });
-    if (req.action === 'read') return out_({ ok: true, nama: a.nama, admin: a.admin, ...readAll_() });
-    if (req.action === 'upsert') return out_({ ok: true, id: upsert_(req.item, a.nama) });
+    if (req.action === 'read') return out_({ ok: true, nama: a.nama, admin: a.admin, ...readAll_(a.admin) });
+    if (req.action === 'upsert') return out_({ ok: true, id: upsert_(req.item, a.nama, a.admin) });
     if (!ADMIN_ACTIONS.includes(req.action)) return out_({ ok: false, error: 'aksi tidak dikenal' });
     if (!a.admin) return out_({ ok: false, error: 'Hanya admin yang boleh' });
     if (req.action === 'delete') remove_(req.kategori, req.id);
@@ -157,7 +157,7 @@ function targetSheet_() {
   return sh;
 }
 
-function rowToItem_(kat, r) {
+function rowToItem_(kat, r, admin) {
   const it = {
     id: String(r[0]),
     kategori: kat,
@@ -165,7 +165,7 @@ function rowToItem_(kat, r) {
     desa: r[2] || '',
     kontak: String(r[3] || ''),
     qty: Number(r[4]) || 0,
-    biaya: Number(r[5]) || 0,
+    biaya: admin ? Number(r[5]) || 0 : 0,
     status: statusKey_(r[6]),
     lokasi: r[7] || '',
     pic: r[8] || '',
@@ -178,19 +178,19 @@ function rowToItem_(kat, r) {
   return it;
 }
 
-function readAll_() {
+function readAll_(admin) {
   const items = [];
   KAT.forEach((kat) => {
     const sh = sheet_(kat);
     if (sh.getLastRow() < 2) return;
     sh.getRange(2, 1, sh.getLastRow() - 1, widthOf_(kat)).getValues().forEach((r) => {
-      if (r[1]) items.push(rowToItem_(kat, r));
+      if (r[1]) items.push(rowToItem_(kat, r, admin));
     });
   });
 
   const target = Object.fromEntries(KAT.map((k) => [k, { target: 0, anggaran: 0 }]));
   targetSheet_().getDataRange().getValues().slice(1).forEach((r) => {
-    if (target[r[0]]) target[r[0]] = { target: Number(r[1]) || 0, anggaran: Number(r[2]) || 0 };
+    if (target[r[0]]) target[r[0]] = { target: Number(r[1]) || 0, anggaran: admin ? Number(r[2]) || 0 : 0 };
   });
 
   const ket = SpreadsheetApp.getActive().getSheetByName('Ketentuan');
@@ -240,7 +240,7 @@ function findRow_(sh, id) {
   return 0;
 }
 
-function upsert_(it, nama) {
+function upsert_(it, nama, admin) {
   const sh = sheet_(it.kategori);
   const w = widthOf_(it.kategori);
   let row = findRow_(sh, it.id);
@@ -257,7 +257,7 @@ function upsert_(it, nama) {
   r[2] = it.desa;
   r[3] = it.kontak;
   r[4] = it.qty;
-  r[5] = it.biaya || '';
+  if (admin) r[5] = it.biaya || ''; // non-admin tidak menerima biaya, jadi jangan menimpa
   r[6] = STATUS[it.status];
   r[7] = it.lokasi;
   r[8] = nama; // PIC = user yang login
