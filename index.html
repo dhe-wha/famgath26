@@ -36,12 +36,19 @@
 </div>
 
 <main>
-  <section id="summary"></section>
-  <div class="bar">
-    <select id="filterStatus"></select>
-    <input id="search" type="search" placeholder="Cari vendor / PIC">
+  <div id="viewList">
+    <div class="bar">
+      <select id="filterStatus"></select>
+      <input id="search" type="search" placeholder="Cari vendor / PIC">
+    </div>
+    <ul id="list"></ul>
+    <div class="pager" id="pager"></div>
   </div>
-  <ul id="list"></ul>
+  <div id="viewUpdate" hidden>
+    <section id="summary"></section>
+    <h3 class="sec">Diterima per lokasi</h3>
+    <ul id="lokList"></ul>
+  </div>
 </main>
 
 <button id="fab" aria-label="Tambah">+</button>
