@@ -252,3 +252,49 @@ fieldset input { display: inline; width: auto; margin: 0; }
 .actions button { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: none; font: inherit; }
 .actions .primary { background: var(--pri); border-color: var(--pri); color: #fff; }
 .actions .danger { color: var(--bad); border-color: var(--bad); }
+
+/* denah */
+.sumbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+.sumbar div { background: var(--card); border-radius: 12px; padding: 8px 10px; box-shadow: 0 1px 3px #0002; }
+.sumbar small { display: block; font-size: 11px; color: var(--mut); }
+.sumbar b { font-size: 15px; }
+.tools { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+.seg2 { display: flex; background: #f1ecd9; border-radius: 99px; padding: 3px; }
+.seg2 button { border: 0; background: none; padding: 6px 12px; border-radius: 99px; font: 13px Roboto, system-ui, sans-serif; color: var(--mut); }
+.seg2 button.on { background: var(--pri); color: #fff; }
+.tools select { flex: 1; min-width: 0; padding: 7px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); font: 13px Roboto, system-ui, sans-serif; }
+.zoom { display: flex; gap: 4px; margin-left: auto; }
+.zoom button { width: 32px; height: 32px; border: 1px solid var(--line); background: var(--card); border-radius: 8px; font-size: 18px; line-height: 1; }
+.mapbox { background: #fff; border-radius: 14px; box-shadow: 0 1px 3px #0002; overflow: auto; border: 1px solid var(--line); }
+.mapbox svg { display: block; }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--mut); margin: 8px 2px 0; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.zone { cursor: pointer; }
+.zone rect { stroke: #2b5d8a; stroke-width: 1.5; }
+.zone.sel rect { stroke: #111; stroke-width: 4; }
+.zone text { pointer-events: none; font-family: Roboto, system-ui, sans-serif; text-anchor: middle; }
+.zone .zn { font-weight: 700; font-size: 15px; fill: #0b2a44; }
+.zone .zv { font-size: 12.5px; font-weight: 600; fill: #0b2a44; }
+.pulse rect { animation: pulse 1s ease-in-out 3; }
+@keyframes pulse { 50% { stroke: #e11; stroke-width: 6; } }
+.st { font-family: Roboto, system-ui, sans-serif; font-size: 11px; fill: #333; text-anchor: middle; pointer-events: none; }
+.st.w { fill: #fff; }
+#denahSheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 9;
+  max-width: 720px; margin: 0 auto;
+  background: #fff; border-radius: 20px 20px 0 0; box-shadow: 0 -4px 16px #0004;
+  padding: 12px 16px calc(84px + env(safe-area-inset-bottom)); max-height: 75%; overflow-y: auto;
+  transform: translateY(110%); transition: transform .25s; visibility: hidden;
+}
+#denahSheet.open { transform: translateY(0); visibility: visible; }
+#denahSheet .grab { width: 40px; height: 4px; border-radius: 2px; background: #ccc; margin: 0 auto 10px; }
+#denahSheet h2 { margin: 0; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
+#denahSheet .x { border: 0; background: none; font-size: 24px; color: var(--mut); }
+#denahSheet h4 { margin: 14px 0 6px; font-size: 13px; color: var(--mut); font-weight: 500; }
+#denahSheet table { width: 100%; border-collapse: collapse; font-size: 14px; }
+#denahSheet td { padding: 5px 0; border-bottom: 1px solid var(--line); }
+#denahSheet td:last-child { text-align: right; font-weight: 600; }
+.saran { background: #fff7de; border: 1px solid #f2dc9a; border-radius: 10px; padding: 8px 10px; font-size: 13px; margin-top: 8px; }
+.btnrow { display: flex; gap: 8px; margin-top: 12px; }
+.btnrow button { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: #fff; font: inherit; }
+.btnrow .primary { background: var(--pri); color: #fff; border-color: var(--pri); }

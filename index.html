@@ -39,7 +39,7 @@
   <div id="viewList">
     <div class="bar">
       <select id="filterStatus"></select>
-      <input id="search" type="search" placeholder="Cari vendor / PIC">
+      <input id="search" type="search" placeholder="Cari vendor / PIC / lokasi">
     </div>
     <ul id="list"></ul>
     <div class="pager" id="pager"></div>
@@ -58,7 +58,34 @@
     <div class="sumhead" style="margin:14px 4px 8px"><h3 class="sec" style="margin:0">Departemen</h3><button id="btnPesAdd" hidden>+ Tambah</button></div>
     <ul id="pesList"></ul>
   </div>
+  <div id="viewDenah" hidden>
+    <div class="sumbar">
+      <div><small>Peserta</small><b id="dPes">-</b></div>
+      <div><small>Nasi kotak</small><b id="dNasi">-</b></div>
+      <div><small>Diterima</small><b id="dTerima">-</b></div>
+    </div>
+    <div class="tools">
+      <div class="seg2" id="dLayer">
+        <button data-l="selisih" class="on">Selisih</button>
+        <button data-l="terima">Diterima</button>
+        <button data-l="peserta">Peserta</button>
+      </div>
+    </div>
+    <div class="tools">
+      <select id="dCari"></select>
+      <div class="zoom"><button id="dZOut" type="button">−</button><button id="dZIn" type="button">+</button></div>
+    </div>
+    <div class="mapbox"><svg id="dMap" viewBox="0 0 940 620" width="100%"></svg></div>
+    <div class="legend">
+      <span><i style="background:#f4a6a6"></i>Kurang</span>
+      <span><i style="background:#9fd8a8"></i>Pas (±5%)</span>
+      <span><i style="background:#f7d77a"></i>Lebih</span>
+    </div>
+    <p id="dLuar" class="upd" style="text-align:left"></p>
+  </div>
 </main>
+
+<div id="denahSheet"></div>
 
 <div id="update" hidden>
   <span>Versi baru tersedia</span>

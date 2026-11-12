@@ -39,7 +39,8 @@ let busy = false;
 let state = load();
 const UPDATE = 'Update';
 const PESERTA = 'Peserta';
-const TABS = [[NASI, '🍱'], [UPDATE, '📊'], [PESERTA, '👥']];
+const DENAH = 'Denah';
+const TABS = [[NASI, '🍱'], [UPDATE, '📊'], [PESERTA, '👥'], [DENAH, '🗺️']];
 const PER = 10;
 let tab = NASI;
 let page = 1;
@@ -155,7 +156,7 @@ function renderList() {
     (i) =>
       i.kategori === NASI &&
       (!f || i.status === f) &&
-      (!q || [i.vendor, i.pic].join(' ').toLowerCase().includes(q))
+      (!q || [i.vendor, i.pic, i.lokasi].join(' ').toLowerCase().includes(q))
   );
   const pages = Math.max(1, Math.ceil(all.length / PER));
   page = Math.min(page, pages);
@@ -192,7 +193,6 @@ function renderPeserta() {
   const sum = (a, f) => a.reduce((n, x) => n + f(x), 0);
   const totPes = sum(pes, (p) => p.jumlah);
   const totNasi = sum(nasi, (i) => i.qty);
-  const sel = (n) => (n > 0 ? '+' : '') + n;
   $('pesSum').innerHTML = `<div class="grid">
       <div class="stat"><small>Total peserta</small><b>${totPes}</b></div>
       <div class="stat"><small>Total nasi kotak</small><b>${totNasi}</b></div>
@@ -246,16 +246,200 @@ function renderPeserta() {
     : '<li class="empty">Belum ada data peserta</li>';
 }
 
+// ---- denah: peta lokasi duduk / penempatan nasi kotak ----
+// Posisi zona (satuan viewBox 940x620) mengikuti denah acara. Lokasi di luar daftar ini tidak digambar
+// di peta tapi tetap masuk ringkasan.
+const DZONA = {
+  VIP: { x: 700, y: 128, w: 90, h: 26 },
+  A1: { x: 290, y: 235, w: 90, h: 100 },
+  A2: { x: 290, y: 335, w: 90, h: 105 },
+  B1: { x: 380, y: 440, w: 160, h: 55 },
+  B2: { x: 540, y: 440, w: 160, h: 55 },
+  C1: { x: 710, y: 335, w: 90, h: 105 },
+  C2: { x: 710, y: 235, w: 90, h: 100 },
+};
+let dLayer = 'selisih';
+let dPicked = null;
+let dFound = null;
+let dZoom = 1;
+
+const sel = (n) => (n > 0 ? '+' : '') + n;
+const sumBy = (a, f) => a.reduce((n, x) => n + f(x), 0);
+
+function dnData() {
+  const pes = state.peserta || [];
+  const nasi = state.items.filter((i) => i.kategori === NASI);
+  const z = {};
+  for (const k of Object.keys(DZONA)) {
+    const depts = pes.filter((p) => p.lokasi === k);
+    const its = nasi.filter((i) => i.lokasi === k);
+    const peserta = sumBy(depts, (p) => p.jumlah);
+    const n = sumBy(its, (i) => i.qty);
+    z[k] = { ...DZONA[k], k, depts, peserta, nasi: n, terima: sumBy(its.filter((i) => i.status === 'diterima'), (i) => i.qty), diff: n - peserta };
+  }
+  return { z, pes, nasi };
+}
+
+function dnWarna(z) {
+  if (!z.peserta && !z.nasi) return '#e5e7eb';
+  return Math.abs(z.diff) <= z.peserta * 0.05 ? '#9fd8a8' : z.diff < 0 ? '#f4a6a6' : '#f7d77a';
+}
+
+function dnRect(x, y, w, h, fill, label, putih) {
+  const t = label
+    ? label
+        .split('\n')
+        .map((l, i, a) => `<text class="st ${putih ? 'w' : ''}" x="${x + w / 2}" y="${y + h / 2 + 4 - (a.length - 1) * 6 + i * 13}">${l}</text>`)
+        .join('')
+    : '';
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="#9aa" stroke-width="1"/>${t}`;
+}
+
+function dnStatic() {
+  let s = dnRect(0, 0, 900, 42, '#111') + dnRect(0, 588, 900, 32, '#000') + dnRect(900, 0, 40, 620, '#2b2b2b');
+  s += `<text class="st w" transform="translate(925 310) rotate(90)" style="font-size:12px">JALAN TRANS SULAWESI</text>`;
+  s += `<rect x="190" y="95" width="690" height="480" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="10 4 2 4"/>`;
+  s += dnRect(10, 235, 120, 255, '#b3a1c9', 'PARKIR UMUM');
+  s += dnRect(190, 140, 70, 75, '#dc9a9a', 'STAND\nKESEHATAN');
+  s += dnRect(190, 235, 70, 255, '#e1dcec', 'AREA\nSTAND\nUMKM');
+  s += dnRect(830, 235, 70, 255, '#e1dcec', 'AREA\nSTAND\nUMKM');
+  s += dnRect(290, 60, 240, 34, '#fbe6d6', 'Parkir VVIP') + dnRect(530, 60, 240, 34, '#fbe6d6', 'Parkir VIP');
+  s += dnRect(370, 96, 80, 34, '#dbe9f3', 'HIBURAN') + dnRect(450, 96, 160, 34, '#ffff00', 'PANGGUNG') + dnRect(610, 96, 80, 34, '#dbe9f3', 'Mkn Tamu');
+  s += dnRect(700, 190, 90, 22, '#f9c79b', 'STAND BJA');
+  s += dnRect(290, 212, 90, 228, '#d8edf5') + dnRect(710, 212, 90, 228, '#d8edf5') + dnRect(380, 440, 320, 75, '#d8edf5');
+  s += `<text class="st" x="335" y="226">TENDA</text><text class="st" x="755" y="226">TENDA</text>`;
+  s += `<text class="st" x="880" y="125">Pintu Masuk</text><text class="st" x="215" y="535">Kupon</text>`;
+  s += `<text class="st w" x="320" y="605">Security</text><text class="st w" x="430" y="605">Pengarahan Parkir</text>`;
+  s += `<text class="st" x="545" y="330" style="font-size:22px;font-weight:700;fill:#99a">LAPANGAN</text>`;
+  return s;
+}
+
+function dnDraw(z) {
+  const defs = Object.values(z)
+    .map((o) => {
+      const p = o.nasi ? Math.min(100, (o.terima / o.nasi) * 100) : 0;
+      return `<linearGradient id="g${o.k}" x1="0" x2="0" y1="1" y2="0"><stop offset="${p}%" stop-color="#6cc07a"/><stop offset="${p}%" stop-color="#e6f3e8"/></linearGradient>`;
+    })
+    .join('');
+  const zones = Object.values(z)
+    .map((o) => {
+      const v = dLayer === 'selisih' ? sel(o.diff) : dLayer === 'terima' ? o.terima + ' / ' + o.nasi : o.peserta;
+      const fill = dLayer === 'selisih' ? dnWarna(o) : dLayer === 'terima' ? `url(#g${o.k})` : '#8ec1e6';
+      const cls = 'zone' + (dPicked === o.k ? ' sel' : '') + (dFound === o.k ? ' pulse' : '');
+      return `<g class="${cls}" data-z="${o.k}"><rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}" rx="4" fill="${fill}"/>
+        <text class="zn" x="${o.x + o.w / 2}" y="${o.y + o.h / 2 - 2}">${o.k}</text>
+        <text class="zv" x="${o.x + o.w / 2}" y="${o.y + o.h / 2 + 15}">${v}</text></g>`;
+    })
+    .join('');
+  $('dMap').innerHTML = `<defs>${defs}</defs>` + dnStatic() + zones;
+}
+
+// lokasi terdekat dihitung dari jarak titik tengah zona di peta
+function dnSaran(z, k) {
+  const o = z[k];
+  const cx = o.x + o.w / 2;
+  const cy = o.y + o.h / 2;
+  if (!o.peserta && !o.nasi) return 'Belum ada data peserta dan nasi kotak di lokasi ini.';
+  if (Math.abs(o.diff) <= o.peserta * 0.05) return 'Sudah seimbang.';
+  const dekat = Object.values(z)
+    .filter((x) => x.k !== k)
+    .map((x) => ({ x, jarak: Math.hypot(x.x + x.w / 2 - cx, x.y + x.h / 2 - cy) }))
+    .sort((a, b) => a.jarak - b.jarak);
+  if (o.diff < 0) {
+    const s = dekat.find((d) => d.x.diff > 0);
+    return s ? `Kurang <b>${-o.diff}</b> porsi → ambil dari <b>${s.x.k}</b> (terdekat yang berlebih, ${sel(s.x.diff)}).` : `Kurang <b>${-o.diff}</b> porsi, tidak ada lokasi berlebih.`;
+  }
+  const t = dekat.find((d) => d.x.diff < 0);
+  return t ? `Lebih <b>${o.diff}</b> porsi → bisa dikirim ke <b>${t.x.k}</b> (terdekat yang kurang, ${sel(t.x.diff)}).` : `Lebih <b>${o.diff}</b> porsi, tidak ada lokasi yang kurang.`;
+}
+
+function dnSheet(z) {
+  const o = dPicked && z[dPicked];
+  const el = $('denahSheet');
+  if (!o) return el.classList.remove('open');
+  const pctT = o.nasi ? Math.min(100, (o.terima / o.nasi) * 100) : 0;
+  el.innerHTML = `<div class="grab"></div>
+    <h2>Lokasi ${esc(o.k)}<button class="x" id="dClose" type="button">×</button></h2>
+    <div class="grid">
+      <div class="stat"><small>Peserta</small><b>${o.peserta}</b></div>
+      <div class="stat"><small>Nasi kotak dipesan</small><b>${o.nasi}</b></div>
+      <div class="stat"><small>Diterima</small><b>${o.terima} / ${o.nasi}</b></div>
+      <div class="stat"><small>Selisih</small><b class="${o.diff < 0 ? 'over' : ''}">${sel(o.diff)}</b></div>
+    </div>
+    <div class="prog"><label><span>Diterima</span><span>${pctT.toFixed(0)}%</span></label><div class="track"><div class="fill" style="width:${pctT}%"></div></div></div>
+    <div class="saran">💡 ${dnSaran(z, o.k)}</div>
+    <h4>Departemen di lokasi ini</h4>
+    ${o.depts.length ? `<table>${o.depts.map((p) => `<tr><td>${esc(p.dept)}</td><td>${p.jumlah} orang</td></tr>`).join('')}</table>` : '<div class="meta">Belum ada departemen di lokasi ini.</div>'}
+    <div class="btnrow"><button id="dVendor" type="button">Lihat vendor di ${esc(o.k)}</button>${cfg.admin ? '<button id="dAtur" type="button" class="primary">Atur departemen</button>' : ''}</div>`;
+  el.classList.add('open');
+  $('dClose').onclick = () => { dPicked = null; render(); };
+  $('dVendor').onclick = () => {
+    $('search').value = o.k;
+    $('filterStatus').value = '';
+    dPicked = null;
+    page = 1;
+    tab = NASI;
+    render();
+    window.scrollTo(0, 0);
+  };
+  if (cfg.admin) $('dAtur').onclick = () => { dPicked = null; tab = PESERTA; render(); window.scrollTo(0, 0); };
+}
+
+function renderDenah() {
+  const { z, pes, nasi } = dnData();
+  $('dPes').textContent = sumBy(pes, (p) => p.jumlah).toLocaleString('id-ID');
+  $('dNasi').textContent = sumBy(nasi, (i) => i.qty).toLocaleString('id-ID');
+  $('dTerima').textContent = sumBy(nasi.filter((i) => i.status === 'diterima'), (i) => i.qty).toLocaleString('id-ID');
+  // pilihan departemen: pertahankan yang sedang dipilih
+  const cur = $('dCari').value;
+  const ds = [...new Set(pes.map((p) => p.dept))].sort();
+  $('dCari').innerHTML = '<option value="">Cari departemen…</option>' + ds.map((d) => `<option>${esc(d)}</option>`).join('');
+  $('dCari').value = ds.includes(cur) ? cur : '';
+  const luar = [...new Set([...pes.map((p) => p.lokasi), ...nasi.map((i) => i.lokasi)].filter((l) => l && !DZONA[l]))];
+  $('dLuar').textContent = luar.length ? 'Lokasi yang tidak ada di denah: ' + luar.join(', ') : '';
+  $('dMap').setAttribute('width', dZoom * 100 + '%');
+  dnDraw(z);
+  dnSheet(z);
+}
+
+$('dMap').onclick = (e) => {
+  const g = e.target.closest('.zone');
+  dPicked = g ? g.dataset.z : null;
+  renderDenah();
+};
+$('dLayer').onclick = (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  dLayer = b.dataset.l;
+  document.querySelectorAll('#dLayer button').forEach((x) => x.classList.toggle('on', x === b));
+  renderDenah();
+};
+$('dCari').onchange = (e) => {
+  const hit = (state.peserta || []).find((p) => p.dept === e.target.value && DZONA[p.lokasi]);
+  dFound = hit ? hit.lokasi : null;
+  dPicked = dFound;
+  renderDenah();
+  setTimeout(() => { dFound = null; if (tab === DENAH) renderDenah(); }, 3500);
+};
+$('dZIn').onclick = () => { dZoom = Math.min(2.5, dZoom + 0.5); renderDenah(); };
+$('dZOut').onclick = () => { dZoom = Math.max(1, dZoom - 0.5); renderDenah(); };
+
 function render() {
   $('viewList').hidden = tab !== NASI;
   $('viewUpdate').hidden = tab !== UPDATE;
   $('viewPeserta').hidden = tab !== PESERTA;
+  $('viewDenah').hidden = tab !== DENAH;
   $('fab').hidden = tab !== NASI;
+  if (tab !== DENAH) {
+    dPicked = null;
+    $('denahSheet').classList.remove('open');
+  }
   renderTabs();
   if (tab === UPDATE) {
     renderSummary();
     renderLokasi();
   } else if (tab === PESERTA) renderPeserta();
+  else if (tab === DENAH) renderDenah();
   else renderList();
 }
 
