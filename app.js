@@ -525,4 +525,11 @@ updateLock();
 if (locked()) openCfg();
 else sync();
 
+// banner mengecil saat scroll supaya konten terlihat; jeda (hysteresis) mencegah berkedip
+addEventListener('scroll', () => {
+  const f = document.querySelector('.frozen');
+  if (scrollY > 80) f.classList.add('shrunk');
+  else if (scrollY < 10) f.classList.remove('shrunk');
+}, { passive: true });
+
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');

@@ -40,7 +40,10 @@ header {
   box-shadow: 0 2px 6px #0003;
 }
 .hero { background: #fff; }
-.hero img { display: block; width: 100%; height: auto; }
+.hero img { display: block; width: 100%; height: auto; max-height: 40vw; transition: max-height .25s; }
+.frozen.shrunk .hero img { max-height: 0; }
+/* tanpa ini browser menggeser scroll saat banner mengecil sehingga berkedip */
+html, body, main { overflow-anchor: none; }
 .chips {
   display: flex;
   flex-wrap: wrap;
