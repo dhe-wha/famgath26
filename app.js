@@ -253,7 +253,6 @@ function renderPeserta() {
 const DK = 0.6;
 const DZONA = Object.fromEntries(
   Object.entries({
-    PRASMANAN: [614, 113, 276, 78],
     VIP: [1074, 230, 92, 77],
     A1: [138, 656, 92, 77],
     B1: [568, 967, 92, 77],
@@ -304,7 +303,7 @@ function dnStatic() {
   const P = (n) => n * DK;
   let s = `<path d="M${P(1258)} ${P(74)} H${P(46)} V${P(1257)} H${P(1550)} V${P(190)} H${P(1412)} M${P(1258)} ${P(36)} V${P(152)} M${P(1412)} ${P(36)} V${P(152)}" fill="none" stroke="#333" stroke-width="1.2" stroke-dasharray="6 4"/>`;
   s += dnRect(660, 34, 184, 40, '#edf0e0', 'Pintu Masuk') + dnRect(1258, 152, 154, 38, '#edf0e0', 'Pintu Masuk');
-  s += dnRect(430, 113, 184, 78, '#fff', 'PARKIR VVIP') + dnRect(890, 113, 184, 78, '#fff', 'PARKIR VIP');
+  s += dnRect(430, 113, 184, 78, '#fff', 'PARKIR VVIP') + dnRect(614, 113, 276, 78, '#dbeef5', 'PRASMANAN') + dnRect(890, 113, 184, 78, '#fff', 'PARKIR VIP');
   s += dnRect(430, 191, 138, 116, '#fff', 'HIBURAN') + dnRect(568, 191, 368, 116, '#fff', 'PANGGUNG', true) + dnRect(936, 191, 138, 116, '#fff', 'Makan\nTamu');
   s += dnRect(1320, 230, 92, 116, '#fff', 'STAND\nBJA');
   s += dnRect(476, 346, 552, 465, '#fff', '');
