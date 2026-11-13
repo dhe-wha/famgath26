@@ -249,15 +249,19 @@ function renderPeserta() {
 // ---- denah: peta lokasi duduk / penempatan nasi kotak ----
 // Posisi zona (satuan viewBox 940x620) mengikuti denah acara. Lokasi di luar daftar ini tidak digambar
 // di peta tapi tetap masuk ringkasan.
-const DZONA = {
-  VIP: { x: 700, y: 128, w: 90, h: 26 },
-  A1: { x: 290, y: 235, w: 90, h: 100 },
-  A2: { x: 290, y: 335, w: 90, h: 105 },
-  B1: { x: 380, y: 440, w: 160, h: 55 },
-  B2: { x: 540, y: 440, w: 160, h: 55 },
-  C1: { x: 710, y: 335, w: 90, h: 105 },
-  C2: { x: 710, y: 235, w: 90, h: 100 },
-};
+// Koordinat ditulis dalam piksel gambar denah asli (1590x1300), lalu diskala DK ke viewBox 954x780.
+const DK = 0.6;
+const DZONA = Object.fromEntries(
+  Object.entries({
+    PRASMANAN: [614, 113, 276, 78],
+    VIP: [1074, 230, 92, 77],
+    A1: [138, 656, 92, 77],
+    B1: [568, 967, 92, 77],
+    B2: [844, 967, 92, 77],
+    C1: [1166, 772, 92, 78],
+    C2: [1166, 579, 92, 77],
+  }).map(([k, [x, y, w, h]]) => [k, { x: x * DK, y: y * DK, w: w * DK, h: h * DK }])
+);
 let dLayer = 'selisih';
 let dPicked = null;
 let dFound = null;
@@ -285,32 +289,31 @@ function dnWarna(z) {
   return Math.abs(z.diff) <= z.peserta * 0.05 ? '#9fd8a8' : z.diff < 0 ? '#f4a6a6' : '#f7d77a';
 }
 
-function dnRect(x, y, w, h, fill, label, putih) {
+function dnRect(x, y, w, h, fill, label, big) {
+  x *= DK; y *= DK; w *= DK; h *= DK;
   const t = label
     ? label
         .split('\n')
-        .map((l, i, a) => `<text class="st ${putih ? 'w' : ''}" x="${x + w / 2}" y="${y + h / 2 + 4 - (a.length - 1) * 6 + i * 13}">${l}</text>`)
+        .map((l, i, a) => `<text class="st" ${big ? 'style="font-size:20px;font-weight:700"' : ''} x="${x + w / 2}" y="${y + h / 2 + 4 - (a.length - 1) * 7 + i * 14}">${l}</text>`)
         .join('')
     : '';
-  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="#9aa" stroke-width="1"/>${t}`;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="#333" stroke-width="1"/>${t}`;
 }
 
 function dnStatic() {
-  let s = dnRect(0, 0, 900, 42, '#111') + dnRect(0, 588, 900, 32, '#000') + dnRect(900, 0, 40, 620, '#2b2b2b');
-  s += `<text class="st w" transform="translate(925 310) rotate(90)" style="font-size:12px">JALAN TRANS SULAWESI</text>`;
-  s += `<rect x="190" y="95" width="690" height="480" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="10 4 2 4"/>`;
-  s += dnRect(10, 235, 120, 255, '#b3a1c9', 'PARKIR UMUM');
-  s += dnRect(190, 140, 70, 75, '#dc9a9a', 'STAND\nKESEHATAN');
-  s += dnRect(190, 235, 70, 255, '#e1dcec', 'AREA\nSTAND\nUMKM');
-  s += dnRect(830, 235, 70, 255, '#e1dcec', 'AREA\nSTAND\nUMKM');
-  s += dnRect(290, 60, 240, 34, '#fbe6d6', 'Parkir VVIP') + dnRect(530, 60, 240, 34, '#fbe6d6', 'Parkir VIP');
-  s += dnRect(370, 96, 80, 34, '#dbe9f3', 'HIBURAN') + dnRect(450, 96, 160, 34, '#ffff00', 'PANGGUNG') + dnRect(610, 96, 80, 34, '#dbe9f3', 'Mkn Tamu');
-  s += dnRect(700, 190, 90, 22, '#f9c79b', 'STAND BJA');
-  s += dnRect(290, 212, 90, 228, '#d8edf5') + dnRect(710, 212, 90, 228, '#d8edf5') + dnRect(380, 440, 320, 75, '#d8edf5');
-  s += `<text class="st" x="335" y="226">TENDA</text><text class="st" x="755" y="226">TENDA</text>`;
-  s += `<text class="st" x="880" y="125">Pintu Masuk</text><text class="st" x="215" y="535">Kupon</text>`;
-  s += `<text class="st w" x="320" y="605">Security</text><text class="st w" x="430" y="605">Pengarahan Parkir</text>`;
-  s += `<text class="st" x="545" y="330" style="font-size:22px;font-weight:700;fill:#99a">LAPANGAN</text>`;
+  const P = (n) => n * DK;
+  let s = `<path d="M${P(1258)} ${P(74)} H${P(46)} V${P(1257)} H${P(1550)} V${P(190)} H${P(1412)} M${P(1258)} ${P(36)} V${P(152)} M${P(1412)} ${P(36)} V${P(152)}" fill="none" stroke="#333" stroke-width="1.2" stroke-dasharray="6 4"/>`;
+  s += dnRect(660, 34, 184, 40, '#edf0e0', 'Pintu Masuk') + dnRect(1258, 152, 154, 38, '#edf0e0', 'Pintu Masuk');
+  s += dnRect(430, 113, 184, 78, '#fff', 'PARKIR VVIP') + dnRect(890, 113, 184, 78, '#fff', 'PARKIR VIP');
+  s += dnRect(430, 191, 138, 116, '#fff', 'HIBURAN') + dnRect(568, 191, 368, 116, '#fff', 'PANGGUNG', true) + dnRect(936, 191, 138, 116, '#fff', 'Makan\nTamu');
+  s += dnRect(1320, 230, 92, 116, '#fff', 'STAND\nBJA');
+  s += dnRect(476, 346, 552, 465, '#fff', '');
+  s += `<circle cx="${P(743)}" cy="${P(491)}" r="${P(15)}" fill="#4a7ab8" stroke="#1d3557" stroke-width="2"/>`;
+  s += dnRect(246, 424, 138, 116, '#fff', 'STAND\nKESEHATAN');
+  s += dnRect(92, 579, 292, 310, '#fff', '') + dnRect(230, 579, 16, 310, '#fff', '');
+  s += dnRect(1120, 385, 292, 543, '#fff', '') + dnRect(1258, 385, 16, 543, '#fff', '') + dnRect(1120, 385, 138, 78, '#fce9d9', 'Game');
+  s += dnRect(430, 928, 644, 116, '#fff', '') + dnRect(752, 928, 1, 116, '#333', '');
+  s += dnRect(430, 1065, 644, 116, '#fff', 'UMKM', true);
   return s;
 }
 
